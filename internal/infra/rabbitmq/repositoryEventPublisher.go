@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Vibino/wolfy/internal/core"
 	amqp "github.com/rabbitmq/amqp091-go"
+	repositoryv1 "github.com/vibino-xyz/protos/contracts/build/go/repository/v1"
+	"github.com/vibino-xyz/wolfy/internal/app/events"
+	"google.golang.org/protobuf/proto"
 )
 
 type repositoryEventPublisher struct {
@@ -19,7 +21,7 @@ const (
 	DLXExchange  = "repository_event_dlx_exchange"
 )
 
-func NewRepositoryEventPublisher(conn *amqp.Connection) (core.RepositoryEventPublisher, error) {
+func NewRepositoryEventPublisher(conn *amqp.Connection) (events.RepositoryEventPublisher, error) {
 	ch, err := conn.Channel()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open channel: %w", err)
@@ -84,6 +86,29 @@ func NewRepositoryEventPublisher(conn *amqp.Connection) (core.RepositoryEventPub
 	}, nil
 }
 
-func (r *repositoryEventPublisher) PublishRepositoryEvent(ctx context.Context, req *core.RepositoryEventRequest) error {
-	panic("unimplemented")
+func (r *repositoryEventPublisher) PublishRepositoryEvent(ctx context.Context, message *repositoryv1.RepositoryEventMessage) error {
+	messageBytes, err := proto.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	err = r.ch.PublishWithContext(
+		ctx,
+		r.exchange,
+		"",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/x-protobuf",
+			Body:        messageBytes,
+			Headers: amqp.Table{
+				"event_type": message.EventType,
+			},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to publish message: %w", err)
+	}
+
+	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	webhooks "github.com/Vibino/wolfy/internal/controllers/http/github"
+	webhooks "github.com/vibino-xyz/wolfy/internal/controller/http/github"
 )
 
 func main() {

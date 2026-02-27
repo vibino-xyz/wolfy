@@ -1,4 +1,4 @@
-package webhooks
+package github
 
 type GitHubWebhookPayload struct {
 	Hook struct {
@@ -17,7 +17,4 @@ type GitHubWebhookPayload struct {
 	} `json:"repository"`
 	Url      string `json:"url"`
 	CloneUrl string `json:"clone_url"`
-}
-
-type GithubWebhookEvent struct {
 }
