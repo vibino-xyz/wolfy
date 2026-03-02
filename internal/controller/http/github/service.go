@@ -1,43 +1,38 @@
 package github
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
+
+	"github.com/labstack/echo/v5"
+	"github.com/vibino-xyz/wolfy/internal/app/events"
 )
 
 type GithubHandler struct {
+	repositoryEventPublisher events.RepositoryEventPublisher
 }
 
-func NewGithubHandler() *GithubHandler {
-	return &GithubHandler{}
+func NewGithubHandler(repositoryEventPublisher events.RepositoryEventPublisher) *GithubHandler {
+	return &GithubHandler{
+		repositoryEventPublisher: repositoryEventPublisher,
+	}
 }
 
-func (h *GithubHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	// only accept POST requests
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		slog.Error("Failed to read request body", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Println(string(body))
+func (h *GithubHandler) Handle(c *echo.Context) error {
+	slog.Info("Received github webhook")
 
 	var payload GitHubWebhookPayload
-	if err := json.Unmarshal(body, &payload); err != nil {
-		slog.Error("Failed to unmarshal JSON payload", "error", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	if err := c.Bind(&payload); err != nil {
+		slog.Error("Failed to bind JSON payload", "error", err)
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	protoMessage := ToProtos(payload)
+	if err := h.repositoryEventPublisher.PublishRepositoryEvent(c.Request().Context(), protoMessage); err != nil {
+		slog.Error("Failed to publish repository event", "error", err)
+		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	slog.Info("Received GitHub webhook", "repository", payload.Repository.FullName, "hook_type", payload.Hook.Type)
-
-	w.WriteHeader(http.StatusOK)
+	return c.NoContent(http.StatusOK)
 }

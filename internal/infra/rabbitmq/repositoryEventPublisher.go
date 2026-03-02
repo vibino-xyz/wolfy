@@ -102,7 +102,7 @@ func (r *repositoryEventPublisher) PublishRepositoryEvent(ctx context.Context, m
 			ContentType: "application/x-protobuf",
 			Body:        messageBytes,
 			Headers: amqp.Table{
-				"event_type": message.EventType,
+				"event_type": int32(message.EventType),
 			},
 		},
 	)

@@ -1,13 +1,11 @@
 package rabbitmq
 
 import (
-	"os"
-
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func NewConn() (*amqp.Connection, error) {
-	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		return nil, err
 	}
