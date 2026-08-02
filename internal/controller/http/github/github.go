@@ -7,7 +7,7 @@ type PushPayload struct {
 	Before     string `json:"before"`
 	After      string `json:"after"`
 	Repository struct {
-		Id            int    `json:"id"`
+		Id            int64  `json:"id"`
 		FullName      string `json:"full_name"`
 		Private       bool   `json:"private"`
 		CloneURL      string `json:"clone_url"`
@@ -27,28 +27,39 @@ type PushPayload struct {
 		Modified []string `json:"modified"`
 	} `json:"head_commit"`
 	Installation struct {
-		Id string `json:"id"`
+		Id int64 `json:"id"`
 	} `json:"installation"`
 }
 
 func ToProto(payload PushPayload) *contracts.RepositoryEventMessage {
+	commits := make([]*contracts.Commit, 0, len(payload.Commits))
+	for _, c := range payload.Commits {
+		commits = append(commits, &contracts.Commit{
+			Id:       c.Id,
+			Added:    c.Added,
+			Removed:  c.Removed,
+			Modified: c.Modified,
+		})
+	}
+
 	return &contracts.RepositoryEventMessage{
 		Provider:  contracts.Provider_GITHUB,
 		EventType: contracts.EventType_INCREMENTAL_INDEX,
 		Repository: &contracts.Repository{
-			Id:            int64(payload.Repository.Id),
+			Id:            payload.Repository.Id,
 			FullName:      payload.Repository.FullName,
 			Private:       payload.Repository.Private,
 			CloneUrl:      payload.Repository.CloneURL,
 			SshUrl:        payload.Repository.SSHURL,
 			DefaultBranch: payload.Repository.DefaultBranch,
 		},
-		Commits: make([]*contracts.Commit, 0),
+		Commits: commits,
 		HeadCommit: &contracts.Commit{
 			Id:       payload.HeadCommit.Id,
-			Added:    make([]string, 0),
-			Removed:  make([]string, 0),
-			Modified: make([]string, 0),
+			Added:    payload.HeadCommit.Added,
+			Removed:  payload.HeadCommit.Removed,
+			Modified: payload.HeadCommit.Modified,
 		},
+		InstallationId: payload.Installation.Id,
 	}
 }
