@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	repositoryv1 "github.com/vibino-xyz/protos/contracts/build/go/repository/v1"
+	contracts "github.com/vibino-xyz/protos/contracts/build"
 	"github.com/vibino-xyz/wolfy/internal/app/events"
 	"google.golang.org/protobuf/proto"
 )
@@ -86,7 +86,7 @@ func NewRepositoryEventPublisher(conn *amqp.Connection) (events.RepositoryEventP
 	}, nil
 }
 
-func (r *repositoryEventPublisher) PublishRepositoryEvent(ctx context.Context, message *repositoryv1.RepositoryEventMessage) error {
+func (r *repositoryEventPublisher) PublishRepositoryEvent(ctx context.Context, message *contracts.RepositoryEventMessage) error {
 	messageBytes, err := proto.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)

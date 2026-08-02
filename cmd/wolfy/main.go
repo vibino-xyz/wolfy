@@ -16,7 +16,7 @@ func NewEcho() *echo.Echo {
 	return echo.New()
 }
 
-func RegisterRoutes(e *echo.Echo, handler *webhooks.GithubHandler) {
+func RegisterRoutes(e *echo.Echo, handler *webhooks.Handler) {
 	e.POST("/api/webhooks/github", handler.Handle)
 }
 
@@ -25,7 +25,7 @@ func main() {
 		fx.Provide(
 			rabbitmq.NewConn,
 			rabbitmq.NewRepositoryEventPublisher,
-			webhooks.NewGithubHandler,
+			webhooks.NewHandler,
 			NewEcho,
 		),
 		fx.Invoke(RegisterRoutes),

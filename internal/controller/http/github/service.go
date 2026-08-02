@@ -8,31 +8,31 @@ import (
 	"github.com/vibino-xyz/wolfy/internal/app/events"
 )
 
-type GithubHandler struct {
+type Handler struct {
 	repositoryEventPublisher events.RepositoryEventPublisher
 }
 
-func NewGithubHandler(repositoryEventPublisher events.RepositoryEventPublisher) *GithubHandler {
-	return &GithubHandler{
+func NewHandler(repositoryEventPublisher events.RepositoryEventPublisher) *Handler {
+	return &Handler{
 		repositoryEventPublisher: repositoryEventPublisher,
 	}
 }
 
-func (h *GithubHandler) Handle(c *echo.Context) error {
+func (h *Handler) Handle(c *echo.Context) error {
 	slog.Info("Received github webhook")
 
-	var payload GitHubWebhookPayload
+	var payload PushPayload
 	if err := c.Bind(&payload); err != nil {
 		slog.Error("Failed to bind JSON payload", "error", err)
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	protoMessage := ToProtos(payload)
+	protoMessage := ToProto(payload)
 	if err := h.repositoryEventPublisher.PublishRepositoryEvent(c.Request().Context(), protoMessage); err != nil {
 		slog.Error("Failed to publish repository event", "error", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	slog.Info("Received GitHub webhook", "repository", payload.Repository.FullName, "hook_type", payload.Hook.Type)
+	slog.Info("Received GitHub webhook", "repository", payload.Repository.FullName)
 	return c.NoContent(http.StatusOK)
 }
